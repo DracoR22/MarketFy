@@ -5,7 +5,7 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
-import { ArrowRight, Loader2Icon } from "lucide-react"
+import { ArrowRight, Loader2, Loader2Icon } from "lucide-react"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -23,30 +23,43 @@ const SignInPage = () => {
     const isSeller = searchParams.get('as')
     const origin = searchParams.get('origin')
 
+    const continueAsSeller = () => {
+      router.push("?as=seller")
+    }
+
+    const continueAsBuyer = () => {
+      router.replace("/sign-in", undefined)
+    }
+
     const { register, handleSubmit, formState: { errors }} = useForm<TAuthCredentialsValidator>({
         resolver: zodResolver(AuthCredentialsValidator)
     })
 
-    const { mutate, isLoading } = trpc.auth.signIn.useMutation({
-       onError: (err) => {
-        if (err.data?.code === "CONFLICT") {
-           return toast.error("This email is already in use. Sign in instead?")
+    const { mutate: signIn, isLoading } = trpc.auth.signIn.useMutation({
+       onSuccess: () => {
+        toast.success('Signed in succesfully')
+        router.refresh()
+
+        if (origin) {
+         return router.push(`${origin}`)
         }
 
-        if (err instanceof ZodError) {
-           return toast.error(err.issues[0].message)
+        if (isSeller) {
+         return router.push('/sell')
         }
 
-        toast.error('Something went wrong. Please try again.')
+        router.push('/')
        },
-        onSuccess: ({ sentToEmail }) => {
-           toast.success(`Verification email sent to ${sentToEmail}`)
-           router.push('/verify-email?to=' + sentToEmail)
+
+       onError: (err) => {
+          if (err.data?.code === 'UNAUTHORIZED') {
+              toast.error('Invalid email or password')
+          }
        }
     })
 
     const onSubmit = ({ email, password }: TAuthCredentialsValidator) => {
-      mutate({ email, password })
+      signIn({ email, password })
     }
 
   return (
@@ -56,7 +69,7 @@ const SignInPage = () => {
           <div className='flex flex-col items-center space-y-2 text-center'>
             <Icons.logo className='h-20 w-20' />
             <h1 className='text-2xl font-semibold tracking-tight'>
-               Sign in to your account
+               Sign in to your {isSeller ? "seller" : ""} account
             </h1>
 
             <Link className={buttonVariants({ variant: 'link', className: 'gap-1.5' })} href='/sign-up'>
@@ -100,6 +113,16 @@ const SignInPage = () => {
                    </span>
                 </div>
               </div>
+
+              {isSeller ? (
+                <Button onClick={continueAsBuyer} variant='secondary' disabled={isLoading}>
+                      Continue as customer
+                </Button>
+              ) : (
+                <Button onClick={continueAsSeller} variant='secondary' disabled={isLoading}>
+                      Continue as seller
+                </Button>  
+              )}
           </div>
         </div>
       </div>
