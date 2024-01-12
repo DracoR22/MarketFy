@@ -49,7 +49,7 @@ const Home = () => {
         </div>
       </div>
 
-      <ProductReel href="/products" title="Brand new"/>
+      <ProductReel query={{ sort: 'desc', limit: 4 }} href="/products" title="Brand new"/>
 
     </MaxWidthWrapper>
 

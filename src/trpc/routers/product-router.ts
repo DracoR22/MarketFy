@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { publicProcedure, router } from "../trpc";
-import { QueryValidator } from "@/lib/validators/query-validator";
+import { QueryValidator } from "../../lib/validators/query-validator";
 import { getPayloadClient } from "../../get-payload";
 
 export const ProductRouter = router({
